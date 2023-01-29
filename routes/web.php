@@ -1,6 +1,7 @@
 <?php
 
-use Illuminate\Support\Facades\Http;
+use App\Http\Controllers\BotController;
+use App\Services\BotActionsService;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -14,11 +15,9 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::get('/', function () {
-    $botToken = env('TELEGRAM_BOT_TOKEN');
+Route::get('/set_webhook', function(BotActionsService $bot){
+    $http = $bot->setWebhook();
+    dd(json_decode($http->body()));
+})->name('setWebhook');
 
-    Http::post("https://api.telegram.org/bot$botToken/sendMessage", [
-        'chat_id' => env('TELEGRAM_DEBUG_CHAT_ID'),
-        'text' => 'Привет'
-    ]);
-});
+Route::post('/'.env('TELEGRAM_WEBHOOK_SLUG').'/webhook', [BotController::class, 'handleRequest'])->name('webhook');
