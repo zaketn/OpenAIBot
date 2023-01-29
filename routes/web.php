@@ -15,9 +15,18 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
+Route::post('/'.env('TELEGRAM_WEBHOOK_SLUG').'/webhook', [BotController::class, 'handleRequest'])->name('webhook');
+
 Route::get('/set_webhook', function(BotActionsService $bot){
     $http = $bot->setWebhook();
     dd(json_decode($http->body()));
 })->name('setWebhook');
 
-Route::post('/'.env('TELEGRAM_WEBHOOK_SLUG').'/webhook', [BotController::class, 'handleRequest'])->name('webhook');
+Route::get('/webhook_info', function(BotActionsService $bot){
+    $http = $bot->makeAction('getWebhookInfo');
+    dd(json_decode($http->body()));
+})->name('getWebhookInfo');
+
+Route::get('/test', function(){
+
+});

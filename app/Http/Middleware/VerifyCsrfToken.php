@@ -11,7 +11,6 @@ class VerifyCsrfToken extends Middleware
      *
      * @var array<int, string>
      */
-    // TODO fix static token
     protected $except = [
         '*/webhook'
     ];
