@@ -1,17 +1,14 @@
 <?php
-//declare(strict_types=1);
-
 namespace App\Services;
 
 use App\Models\BotUser;
 use Illuminate\Http\Request;
-use Illuminate\Http\Client\Response;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
-use App\Services\OpenAIService;
+use App\Jobs\Bot\SendMessageJob;
+use App\Traits\Bot\MakeAction;
 
 class BotActionsService
 {
+    use MakeAction;
     /**
      * Токен используемого бота
      *
@@ -38,20 +35,6 @@ class BotActionsService
     }
 
     /**
-     * Выполняет запрос к Telegram API
-     *
-     * @param string $name
-     * @param array $args
-     * @return Response
-     */
-    private function makeAction(string $name, array $args = []): Response
-    {
-        $sApiLink = 'https://api.telegram.org/bot' . $this->botToken . "/$name";
-
-        return Http::post($sApiLink, $args);
-    }
-
-    /**
      * Возвращает существующего пользователя или создает нового
      *
      * @param int $iChatId
@@ -73,23 +56,21 @@ class BotActionsService
 
     private function clearContext(): void
     {
-        $sResponseMessage = '<i>Контекст пуст</i>';
-        if (!empty($oBotUser->context)) {
-            $oBotUser->context = null;
-            $oBotUser->save();
+        if (!empty($this->botUser->context)) {
+            $this->botUser->update(['context' => null]);
             $sResponseMessage = '<i>Контекст успешно очищен</i>';
         }
 
-        $this->makeAction('sendMessage', [
+        SendMessageJob::dispatch([
             'chat_id' => $this->botUser->chat_id,
-            'text' => $sResponseMessage,
+            'text' => $sResponseMessage ?? '<i>Контекст пуст</i>',
             'parse_mode' => 'html',
         ]);
     }
 
     private function sayHi() : void
     {
-        $this->makeAction('sendMessage', [
+        SendMessageJob::dispatch([
             'chat_id' => $this->chatId,
             'text' => "Привет!\nТы пишешь мне сообщения - я отвечаю\nДля того чтобы стереть мне память, используй /clear_context",
             'parse_mode' => 'html',
@@ -98,15 +79,10 @@ class BotActionsService
 
     private function generateText(OpenAIService $AI) : void
     {
-        $this->makeAction('sendMessage', [
-            'chat_id' => $this->chatId,
-            'text' => 'Начинается генерация',
-        ]);
-
         $sContext = $this->getCurrentContext();
         $generatedText = $AI->generateText($sContext);
 
-        $this->makeAction('sendMessage', [
+        SendMessageJob::dispatch([
             'chat_id' => $this->chatId,
             'text' => $generatedText,
         ]);
