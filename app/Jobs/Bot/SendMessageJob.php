@@ -18,30 +18,21 @@ class SendMessageJob implements ShouldQueue
 
     private array $args;
 
-    private string $response;
-
-    /**
-     * Create a new job instance.
-     *
-     * @return void
-     */
     public function __construct(array $args)
     {
         $this->args = $args;
     }
 
-    /**
-     * Execute the job.
-     *
-     * @return void
-     */
     public function handle()
     {
-        $this->response = $this->makeAction('sendMessage', $this->args);
-    }
-
-    public function failed(Throwable $exception)
-    {
-        Log::debug($exception->getMessage());
+        try{
+            $response = $this
+                ->makeAction('sendMessage', $this->args)
+                ->throw()
+                ->json();
+            return $response['ok'] ?? false;
+        } catch (Throwable $exception){
+            Log::debug($exception->getMessage());
+        }
     }
 }

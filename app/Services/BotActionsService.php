@@ -1,14 +1,23 @@
 <?php
+
 namespace App\Services;
 
 use App\Models\BotUser;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use App\Jobs\Bot\SendMessageJob;
 use App\Traits\Bot\MakeAction;
+use App\Services\Conditions\ChatCondition;
+use App\Services\Conditions\RewriteCondition;
+use App\Services\Commands\SayHiService;
+use App\Services\Commands\ClearContextService;
+use Illuminate\Support\Facades\Log;
+
 
 class BotActionsService
 {
     use MakeAction;
+
     /**
      * Токен используемого бота
      *
@@ -31,7 +40,7 @@ class BotActionsService
         $this->chatId = (int)$this->messageData['message']['from']['id'];
         $this->botUser = $this->getOrCreateUser($this->chatId);
 
-        $this->handleMessage($AI);
+        $this->handleMessage($request);
     }
 
     /**
@@ -42,65 +51,40 @@ class BotActionsService
      */
     private function getOrCreateUser(int $iChatId): BotUser
     {
-        return BotUser::query()->firstOrCreate(['chat_id' => $iChatId], ['chat_id' => $iChatId]);
+        Log::debug('Создан пользователь ' . $iChatId);
+        return BotUser::query()->firstOrCreate(
+            ['chat_id' => $iChatId],
+            [
+                'chat_id' => $iChatId,
+                'condition' => 'start',
+                'condition_step' => 0,
+            ]
+        );
     }
 
-    private function handleMessage(OpenAIService $AI): void
+    private function handleMessage(Request $request)
     {
-        match ($this->messageData['message']['text']) {
-            '/start' => $this->sayHi(),
-            '/clear_context' => $this->clearContext(),
-            default => $this->generateText($AI)
-        };
-    }
+        $commands = [
+            '/start', '/clear_context', '/rewrite'
+        ];
 
-    private function clearContext(): void
-    {
-        if (!empty($this->botUser->context)) {
-            $this->botUser->update(['context' => null]);
-            $sResponseMessage = '<i>Контекст успешно очищен</i>';
+        $condition = null;
+        if(isset($this->messageData['message']['text']) && in_array($this->messageData['message']['text'], $commands)){
+            $condition = $this->messageData['message']['text'];
+        } else if(in_array($this->botUser->condition, $commands)){
+            $condition = $this->botUser->condition;
         }
 
-        SendMessageJob::dispatch([
-            'chat_id' => $this->botUser->chat_id,
-            'text' => $sResponseMessage ?? '<i>Контекст пуст</i>',
-            'parse_mode' => 'html',
-        ]);
-    }
-
-    private function sayHi() : void
-    {
-        SendMessageJob::dispatch([
-            'chat_id' => $this->chatId,
-            'text' => "Привет!\nТы пишешь мне сообщения - я отвечаю\nДля того чтобы стереть мне память, используй /clear_context",
-            'parse_mode' => 'html',
-        ]);
-    }
-
-    private function generateText(OpenAIService $AI) : void
-    {
-        $sContext = $this->getCurrentContext();
-        $generatedText = $AI->generateText($sContext);
-
-        SendMessageJob::dispatch([
-            'chat_id' => $this->chatId,
-            'text' => $generatedText,
-        ]);
-
-        $this->contextUpdate($sContext, $generatedText);
-    }
-
-    private function getCurrentContext() : string
-    {
-        $sUserContext = $this->botUser->context;
-        $sContext = !empty($sUserContext) ? $sUserContext : "";
-        return $sContext . 'Human: ' . $this->messageData['message']['text'] . "\nAI: ";
-    }
-
-    private function contextUpdate(string $context, string $generatedText) : void
-    {
-        $sContext = $context . str_replace("\n", '', $generatedText) . "\n";
-        $this->botUser->context = $sContext;
-        $this->botUser->save();
+        if(!empty($condition)){
+            return match ($condition) {
+                '/start' => new SayHiService($this->chatId),
+                '/clear_context' => new ClearContextService($this->botUser),
+                '/rewrite' => new RewriteCondition($this->botUser, $this->messageData),
+                default => new ChatCondition($request, $this->botUser)
+            };
+        }
+        else {
+            return new ChatCondition($request, $this->botUser);
+        }
     }
 }
