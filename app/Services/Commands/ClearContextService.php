@@ -3,11 +3,14 @@ namespace App\Services\Commands;
 
 use App\Jobs\Bot\SendMessageJob;
 use App\Models\BotUser;
-use App\Services\OpenAIService;
-use Illuminate\Http\Request;
 
 class ClearContextService
 {
+    /**
+     * Очищает контекст пользователя
+     *
+     * @param BotUser $botUser
+     */
     public function __construct(BotUser $botUser)
     {
         if (!empty($botUser->context)) {

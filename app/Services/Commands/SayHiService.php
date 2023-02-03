@@ -6,6 +6,11 @@ use App\Jobs\Bot\SendMessageJob;
 
 class SayHiService
 {
+    /**
+     * Отправляет приветственное сообщение при команде /start
+     *
+     * @param int $chatId
+     */
     public function __construct(int $chatId)
     {
         SendMessageJob::dispatch([

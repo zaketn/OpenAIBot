@@ -3,26 +3,18 @@
 namespace App\Services;
 
 use App\Models\BotUser;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
-use App\Jobs\Bot\SendMessageJob;
 use App\Traits\Bot\MakeAction;
 use App\Services\Conditions\ChatCondition;
 use App\Services\Conditions\RewriteCondition;
 use App\Services\Commands\SayHiService;
 use App\Services\Commands\ClearContextService;
-use Illuminate\Support\Facades\Log;
 
 
 class BotActionsService
 {
     use MakeAction;
 
-    /**
-     * Токен используемого бота
-     *
-     * @var string
-     */
     protected string $botToken;
 
     protected BotUser $botUser;
@@ -31,7 +23,7 @@ class BotActionsService
 
     protected int $chatId;
 
-    public function init(Request $request, OpenAIService $AI)
+    public function init(Request $request, OpenAIService $AI): void
     {
         $this->botToken = env('TELEGRAM_BOT_TOKEN');
         $this->debugChatID = env('TELEGRAM_DEBUG_CHAT_ID');
@@ -51,7 +43,6 @@ class BotActionsService
      */
     private function getOrCreateUser(int $iChatId): BotUser
     {
-        Log::debug('Создан пользователь ' . $iChatId);
         return BotUser::query()->firstOrCreate(
             ['chat_id' => $iChatId],
             [
@@ -62,29 +53,34 @@ class BotActionsService
         );
     }
 
-    private function handleMessage(Request $request)
+    /**
+     * Выбирает обработчик в соответствии с сообщением пользователя
+     *
+     * @param Request $request
+     * @return void
+     */
+    private function handleMessage(Request $request) : void
     {
         $commands = [
             '/start', '/clear_context', '/rewrite'
         ];
 
         $condition = null;
-        if(isset($this->messageData['message']['text']) && in_array($this->messageData['message']['text'], $commands)){
+        if (isset($this->messageData['message']['text']) && in_array($this->messageData['message']['text'], $commands)) {
             $condition = $this->messageData['message']['text'];
-        } else if(in_array($this->botUser->condition, $commands)){
+        } else if (in_array($this->botUser->condition, $commands)) {
             $condition = $this->botUser->condition;
         }
 
-        if(!empty($condition)){
-            return match ($condition) {
+        if (!empty($condition)) {
+            match ($condition) {
                 '/start' => new SayHiService($this->chatId),
                 '/clear_context' => new ClearContextService($this->botUser),
                 '/rewrite' => new RewriteCondition($this->botUser, $this->messageData),
                 default => new ChatCondition($request, $this->botUser)
             };
-        }
-        else {
-            return new ChatCondition($request, $this->botUser);
+        } else {
+            new ChatCondition($request, $this->botUser);
         }
     }
 }

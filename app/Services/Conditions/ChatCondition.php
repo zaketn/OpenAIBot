@@ -6,6 +6,9 @@ use App\Models\BotUser;
 use App\Services\OpenAIService;
 use Illuminate\Http\Request;
 
+/**
+ * Логика состояния чата
+ */
 class ChatCondition
 {
     private BotUser $botUser;
@@ -18,6 +21,12 @@ class ChatCondition
         if(isset($this->messageData['message']['text'])) $this->generateText(new OpenAIService());
     }
 
+    /**
+     * Генерация ответа для пользователя
+     *
+     * @param OpenAIService $AI
+     * @return void
+     */
     private function generateText(OpenAIService $AI): void
     {
         $sContext = $this->getCurrentContext();
@@ -31,6 +40,11 @@ class ChatCondition
         $this->contextUpdate($sContext, $generatedText);
     }
 
+    /**
+     * Получает текущий контекст
+     *
+     * @return string
+     */
     private function getCurrentContext(): string
     {
         $sUserContext = $this->botUser->context;
@@ -38,6 +52,13 @@ class ChatCondition
         return $sContext . 'Human: ' . $this->messageData['message']['text'] . "\nAI: ";
     }
 
+    /**
+     * Записывает в контекст сгенерированный ответ
+     *
+     * @param string $context
+     * @param string $generatedText
+     * @return void
+     */
     private function contextUpdate(string $context, string $generatedText): void
     {
         $sContext = $context . str_replace("\n", '', $generatedText) . "\n";

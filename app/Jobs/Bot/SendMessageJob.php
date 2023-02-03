@@ -3,7 +3,6 @@
 namespace App\Jobs\Bot;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
@@ -23,6 +22,11 @@ class SendMessageJob implements ShouldQueue
         $this->args = $args;
     }
 
+    /**
+     * Отправляет пользователю сообщение
+     *
+     * @return false|mixed|void
+     */
     public function handle()
     {
         try{
