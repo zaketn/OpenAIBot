@@ -18,6 +18,8 @@ class BotUser extends Model
 
     protected $fillable = [
         'chat_id',
-        'context'
+        'context',
+        'condition',
+        'condition_step',
     ];
 }

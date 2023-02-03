@@ -14,6 +14,12 @@ class OpenAIService
         $this->AI = OpenAI::client($APIKey);
     }
 
+    /**
+     * Генерирует сообщение через OpenAI API
+     *
+     * @param string $correspondingMessage
+     * @return string
+     */
     public function generateText(string $correspondingMessage) : string
     {
         $response = $this->AI->completions()->create([

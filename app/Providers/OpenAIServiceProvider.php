@@ -7,11 +7,6 @@ use Illuminate\Support\ServiceProvider;
 
 class OpenAIServiceProvider extends ServiceProvider
 {
-    /**
-     * Register services.
-     *
-     * @return void
-     */
     public function register()
     {
         $this->app->singleton(OpenAIService::class, function($app){
@@ -19,11 +14,6 @@ class OpenAIServiceProvider extends ServiceProvider
         });
     }
 
-    /**
-     * Bootstrap services.
-     *
-     * @return void
-     */
     public function boot()
     {
         //
