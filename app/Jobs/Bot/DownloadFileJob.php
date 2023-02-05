@@ -35,6 +35,7 @@ class DownloadFileJob implements ShouldQueue
     {
         try{
             $sStorageLink = storage_path("app/public/").$this->userId.'/download_files';
+            if(!is_dir(storage_path("app/public/").$this->userId)) mkdir(storage_path("app/public/").$this->userId);
             if(!is_dir($sStorageLink)) mkdir($sStorageLink);
             File::cleanDirectory($sStorageLink);
 
