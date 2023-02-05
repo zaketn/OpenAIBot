@@ -5,6 +5,7 @@ namespace App\Services\Conditions;
 use App\Jobs\Bot\DownloadFileJob;
 use App\Jobs\Bot\SendMessageJob;
 use App\Jobs\Bot\SendFileJob;
+use App\Jobs\Bot\RewriteTextJob;
 use App\Models\BotUser;
 use App\Services\OpenAIService;
 use App\Traits\Bot\MakeAction;
@@ -127,30 +128,32 @@ class RewriteCondition
         $aUserFiles = scandir(storage_path('app/public/') . $this->botUser->chat_id . '/download_files', SCANDIR_SORT_DESCENDING);
         $sCurrentFile = file_get_contents(storage_path("app/public/" . $this->botUser->chat_id . '/download_files/' . $aUserFiles[0]));
 
-        preg_match_all('/(.*)\s/u', $sCurrentFile, $aParagraphs);
-        $aParagraphs = $aParagraphs[1];
+        RewriteTextJob::dispatch($rewriteIterations, $sCurrentFile, $this->botUser);
 
-        foreach (range(1, $rewriteIterations) as $iIteration) {
-            $sRewritedText = [];
-            SendMessageJob::dispatch([
-                'chat_id' => $this->botUser->chat_id,
-                'text' => "<i>Генерация $iIteration копии</i>",
-                'parse_mode' => 'html',
-            ]);
-            foreach ($aParagraphs as $index => $sParagraph) {
-                if (!empty(trim($sParagraph))) {
-                    if (str_contains($sParagraph, '{{'))
-                        $sRewritedText[$index] = str_replace(['{{', '}}'], '', $sParagraph);
-                    else
-                        $sRewritedText[$index] = $AI->generateText("Перепиши текст: \"$sParagraph\"");
-                }
-            }
-            SendFileJob::dispatch(
-                implode("\n", $sRewritedText), [
-                    'chat_id' => $this->botUser->chat_id,
-                ]
-            );
-        }
+//        preg_match_all('/(.*)\s/u', $sCurrentFile, $aParagraphs);
+//        $aParagraphs = $aParagraphs[1];
+//
+//        foreach (range(1, $rewriteIterations) as $iIteration) {
+//            $sRewritedText = [];
+//            SendMessageJob::dispatch([
+//                'chat_id' => $this->botUser->chat_id,
+//                'text' => "<i>Генерация $iIteration копии</i>",
+//                'parse_mode' => 'html',
+//            ]);
+//            foreach ($aParagraphs as $index => $sParagraph) {
+//                if (!empty(trim($sParagraph))) {
+//                    if (str_contains($sParagraph, '{{'))
+//                        $sRewritedText[$index] = str_replace(['{{', '}}'], '', $sParagraph);
+//                    else
+//                        $sRewritedText[$index] = $AI->generateText("Перепиши текст: \"$sParagraph\"");
+//                }
+//            }
+//            SendFileJob::dispatch(
+//                implode("\n", $sRewritedText), [
+//                    'chat_id' => $this->botUser->chat_id,
+//                ]
+//            );
+//        }
         $this->closeRewright();
     }
 
