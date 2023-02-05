@@ -34,8 +34,6 @@ class RewriteCondition
             $this->messageData = $messageData;
             $this->iStep = $botUser->condition_step;
 
-            $AI = new OpenAIService();
-
             match ($this->botUser->condition_step) {
                 0 => $this->fileRequest(),
                 1 => $this->downloadFile($messageData),
@@ -70,7 +68,7 @@ class RewriteCondition
                 }
                 break;
             case 2:
-                if (!is_numeric($messageData['message']['text']) && (int)$messageData['message']['text'] > 0) {
+                if (!is_numeric($messageData['message']['text']) && (int)$messageData['message']['text'] <= 0) {
                     SendMessageJob::dispatch([
                         'chat_id' => $this->botUser->chat_id,
                         'text' => 'Отправьте простое натуральное число',
@@ -124,7 +122,7 @@ class RewriteCondition
 
         $rewriteIterations = $this->messageData['message']['text'];
 
-        $AI = new OpenAIService();
+        $AI = new OpenAIService($this->botUser);
 
         $aUserFiles = scandir(storage_path('app/public/') . $this->botUser->chat_id . '/download_files', SCANDIR_SORT_DESCENDING);
         $sCurrentFile = file_get_contents(storage_path("app/public/" . $this->botUser->chat_id . '/download_files/' . $aUserFiles[0]));

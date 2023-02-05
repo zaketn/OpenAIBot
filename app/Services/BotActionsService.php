@@ -9,6 +9,7 @@ use App\Services\Conditions\ChatCondition;
 use App\Services\Conditions\RewriteCondition;
 use App\Services\Commands\SayHiService;
 use App\Services\Commands\ClearContextService;
+use App\Services\Conditions\ModelCondition;
 
 
 class BotActionsService
@@ -47,8 +48,8 @@ class BotActionsService
             ['chat_id' => $iChatId],
             [
                 'chat_id' => $iChatId,
-                'condition' => 'start',
                 'condition_step' => 0,
+                'model' => 'text-davinci-003'
             ]
         );
     }
@@ -62,7 +63,7 @@ class BotActionsService
     private function handleMessage(Request $request) : void
     {
         $commands = [
-            '/start', '/clear_context', '/rewrite'
+            '/start', '/clear_context', '/rewrite', '/model'
         ];
 
         $condition = null;
@@ -77,6 +78,7 @@ class BotActionsService
                 '/start' => new SayHiService($this->chatId),
                 '/clear_context' => new ClearContextService($this->botUser),
                 '/rewrite' => new RewriteCondition($this->botUser, $this->messageData),
+                '/model' => new ModelCondition($this->botUser, $this->messageData),
                 default => new ChatCondition($request, $this->botUser)
             };
         } else {

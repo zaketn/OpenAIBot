@@ -18,7 +18,7 @@ class ChatCondition
     {
         $this->botUser = $botUser;
         $this->messageData = $request->all();
-        if(isset($this->messageData['message']['text'])) $this->generateText(new OpenAIService());
+        if(isset($this->messageData['message']['text'])) $this->generateText(new OpenAIService($botUser));
     }
 
     /**

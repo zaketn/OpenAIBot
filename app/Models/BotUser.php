@@ -21,5 +21,16 @@ class BotUser extends Model
         'context',
         'condition',
         'condition_step',
+        'model',
     ];
+
+    public function resetCondition()
+    {
+        $this->update([
+            'condition' => null,
+            'condition_step' => 0,
+            'is_started' => false,
+            'context' => null,
+        ]);
+    }
 }
