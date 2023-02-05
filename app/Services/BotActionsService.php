@@ -10,6 +10,7 @@ use App\Services\Conditions\RewriteCondition;
 use App\Services\Commands\SayHiService;
 use App\Services\Commands\ClearContextService;
 use App\Services\Conditions\ModelCondition;
+use App\Services\Commands\InfoService;
 
 
 class BotActionsService
@@ -63,7 +64,7 @@ class BotActionsService
     private function handleMessage(Request $request) : void
     {
         $commands = [
-            '/start', '/clear_context', '/rewrite', '/model'
+            '/start', '/clear_context', '/rewrite', '/model', '/info',
         ];
 
         $condition = null;
@@ -75,7 +76,7 @@ class BotActionsService
 
         if (!empty($condition)) {
             match ($condition) {
-                '/start' => new SayHiService($this->chatId),
+                '/start', '/info' => new InfoService($this->chatId),
                 '/clear_context' => new ClearContextService($this->botUser),
                 '/rewrite' => new RewriteCondition($this->botUser, $this->messageData),
                 '/model' => new ModelCondition($this->botUser, $this->messageData),

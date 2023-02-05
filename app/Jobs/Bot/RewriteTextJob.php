@@ -45,7 +45,7 @@ class RewriteTextJob implements ShouldQueue
         $aParagraphs = $aParagraphs[1];
 
         foreach (range(1, $this->rewriteIterations) as $iIteration) {
-            $AI = new OpenAIService();
+            $AI = new OpenAIService($this->botUser);
             $sRewritedText = [];
             SendMessageJob::dispatch([
                 'chat_id' => $this->botUser->chat_id,

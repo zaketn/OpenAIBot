@@ -87,9 +87,17 @@ class RewriteCondition
      */
     private function fileRequest(): void
     {
+        $sText = <<<END
+<strong>Отправьте файл в формате txt.</strong>
+
+Файл должен быть разбит на небольшие абзацы для того чтобы ИИ мог их обработать, абзацы которые не должны быть переписаны нужно заключить в две фигурные скобки, например {{ Заголовок }}.
+END;
+
+
         SendMessageJob::dispatch([
             'chat_id' => $this->botUser->chat_id,
-            'text' => 'Отправьте файл в формате txt.',
+            'text' => $sText,
+            'parse_mode' => 'html'
         ]);
     }
 
