@@ -11,6 +11,7 @@ use App\Services\Commands\SayHiService;
 use App\Services\Commands\ClearContextService;
 use App\Services\Conditions\ModelCondition;
 use App\Services\Commands\InfoService;
+use Illuminate\Support\Facades\Log;
 
 
 class BotActionsService
@@ -27,11 +28,15 @@ class BotActionsService
 
     public function init(Request $request, OpenAIService $AI): void
     {
+        Log::debug($request);
+
+
+
         $this->botToken = env('TELEGRAM_BOT_TOKEN');
         $this->debugChatID = env('TELEGRAM_DEBUG_CHAT_ID');
         $this->messageData = $request->all();
 
-        $this->chatId = (int)$this->messageData['message']['from']['id'];
+        $this->chatId = isset($this->messageData['message']) ? (int)$this->messageData['message']['from']['id'] : (int)$this->messageData['edited_message']['from']['id'];
         $this->botUser = $this->getOrCreateUser($this->chatId);
 
         $this->handleMessage($request);

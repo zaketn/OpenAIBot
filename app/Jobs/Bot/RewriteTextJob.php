@@ -5,16 +5,18 @@ namespace App\Jobs\Bot;
 use App\Jobs\Bot\SendMessageJob;
 use App\Models\BotUser;
 use App\Services\OpenAIService;
+use App\Traits\Bot\MakeAction;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Throwable;
 
 class RewriteTextJob implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, MakeAction;
 
     private int $rewriteIterations;
 
@@ -57,7 +59,9 @@ class RewriteTextJob implements ShouldQueue
                     if (str_contains($sParagraph, '{{'))
                         $sRewritedText[$index] = str_replace(['{{', '}}'], '', $sParagraph);
                     else
-                        $sRewritedText[$index] = $AI->generateText("Перепиши текст: \"$sParagraph\"");
+                        if(isset($sParagraph)){
+                            $sRewritedText[$index] = $AI->generateText("Перепиши текст: \"$sParagraph\"");
+                        }
                 }
             }
             SendFileJob::dispatch(
@@ -66,5 +70,22 @@ class RewriteTextJob implements ShouldQueue
                 ]
             );
         }
+    }
+
+    public function failed(Throwable $exception)
+    {
+        SendMessageJob::dispatch([
+            'chat_id' => $this->botUser->chat_id,
+            'text' => 'Возникла ошибка. Отмена рерайтинга.',
+        ]);
+
+        SendMessageJob::dispatch([
+            'chat_id' => env('TELEGRAM_DEBUG_CHAT_ID'),
+            'text' => 'Ошибка при рерайтинге.\n' . $exception->getMessage(),
+        ]);
+
+        $this->botUser->condition = null;
+        $this->botUser->condition_step = 0;
+        $this->botUser->save();
     }
 }

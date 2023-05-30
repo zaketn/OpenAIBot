@@ -131,37 +131,11 @@ END;
 
         $rewriteIterations = $this->messageData['message']['text'];
 
-        $AI = new OpenAIService($this->botUser);
-
         $aUserFiles = scandir(storage_path('app/public/') . $this->botUser->chat_id . '/download_files', SCANDIR_SORT_DESCENDING);
         $sCurrentFile = file_get_contents(storage_path("app/public/" . $this->botUser->chat_id . '/download_files/' . $aUserFiles[0]));
 
         RewriteTextJob::dispatch($rewriteIterations, $sCurrentFile, $this->botUser);
 
-//        preg_match_all('/(.*)\s/u', $sCurrentFile, $aParagraphs);
-//        $aParagraphs = $aParagraphs[1];
-//
-//        foreach (range(1, $rewriteIterations) as $iIteration) {
-//            $sRewritedText = [];
-//            SendMessageJob::dispatch([
-//                'chat_id' => $this->botUser->chat_id,
-//                'text' => "<i>Генерация $iIteration копии</i>",
-//                'parse_mode' => 'html',
-//            ]);
-//            foreach ($aParagraphs as $index => $sParagraph) {
-//                if (!empty(trim($sParagraph))) {
-//                    if (str_contains($sParagraph, '{{'))
-//                        $sRewritedText[$index] = str_replace(['{{', '}}'], '', $sParagraph);
-//                    else
-//                        $sRewritedText[$index] = $AI->generateText("Перепиши текст: \"$sParagraph\"");
-//                }
-//            }
-//            SendFileJob::dispatch(
-//                implode("\n", $sRewritedText), [
-//                    'chat_id' => $this->botUser->chat_id,
-//                ]
-//            );
-//        }
         $this->closeRewright();
     }
 
